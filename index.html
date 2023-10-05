@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Sudoku Solver</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #sudoku-board td {
+            border: 1px solid black;
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 24px;
+        }
+
+        .pre-filled {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Sudoku Solver</h1>
+        <div class="d-flex justify-content-center">
+            <table id="sudoku-board"></table>
+        </div>
+        <div class="d-flex justify-content-center mt-3">
+            <button class="btn btn-primary" onclick="solveSudoku()">Solve</button>
+        </div>
+        <div class="d-flex justify-content-center mt-3">
+            <button class="btn btn-secondary" onclick="generateRandomBoard()">Generate Random Board</button>
+        </div>
+    </div>
+
+    <script>
+        // Başlangıç Sudoku tahtasını oluştur
+        let initialBoard = Array.from(Array(9), () => Array(9).fill(0));
+        // Çözüm işlemleri için kopyasını oluştur
+        let board = JSON.parse(JSON.stringify(initialBoard));
+
+        // Belirtilen sayının (num) belirtilen hücreye (row, col) yerleştirilip yerleştirilemeyeceğini kontrol et
+        function isValid(board, row, col, num) {
+            // Satır ve sütun kontrolü
+            for (let x = 0; x < 9; x++) {
+                if (board[row][x] === num || board[x][col] === num) {
+                    return false;
+                }
+            }
+            // 3x3 alt kare kontrolü
+            const startRow = row - row % 3,
+                startCol = col - col % 3;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if (board[i + startRow][j + startCol] === num) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        // Rastgele başlangıç tahtası oluştur
+        function generateRandomBoard() {
+            initialBoard = Array.from(Array(9), () => Array(9).fill(0));
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    if (Math.random() < 0.3) {
+                        let num = Math.floor(Math.random() * 9) + 1;
+                        if (isValid(initialBoard, i, j, num)) {
+                            initialBoard[i][j] = num;
+                        }
+                    }
+                }
+            }
+            board = JSON.parse(JSON.stringify(initialBoard));
+            renderBoard(board);
+        }
+
+        // Tahtayı çöz
+        async function solve(board) {
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    if (board[i][j] === 0) {
+                        for (let num = 1; num <= 9; num++) {
+                            if (isValid(board, i, j, num)) {
+                                board[i][j] = num;
+                                renderBoard(board);
+                                await new Promise(resolve => setTimeout(resolve, 1));
+                                if (await solve(board)) {
+                                    return true;
+                                }
+                                board[i][j] = 0;
+                            }
+                        }
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        // Tahtayı görselleştir
+        function renderBoard(board) {
+            const table = document.getElementById('sudoku-board');
+            table.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                let row = document.createElement('tr');
+                for (let j = 0; j < 9; j++) {
+                    let cell = document.createElement('td');
+                    cell.textContent = board[i][j] !== 0 ? board[i][j] : '';
+                    if (initialBoard[i][j] !== 0) {
+                        cell.classList.add('pre-filled');
+                    }
+                    row.appendChild(cell);
+                }
+                table.appendChild(row);
+            }
+        }
+
+        // Sudoku çözümü başlat
+        async function solveSudoku() {
+            if (await solve(board)) {
+                renderBoard(board);
+            } else {
+                alert('No solution exists.');
+            }
+        }
+
+        // Başlangıç tahtasını görselleştir
+        renderBoard(board);
+    </script>
+</body>
+
+</html>
